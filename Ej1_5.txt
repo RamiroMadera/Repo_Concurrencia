@@ -23,8 +23,10 @@ Process Profesor [id: 1..3]{
     <await (cantAlu == P)>;
     while (cantExamen < P){         <----- tendría que estar entre <>?
         <cantExam = cantExam + 1>   <----- dónde debería hacer este incremento? (intento no tener que poner todo el while entre <> )
-        <desencolar(cola, idAlu)>
-        //corregir examen[idAlu]
-        examenCorregido[idAlu]= true;
+        if (! empty(cola)) {
+            <desencolar(cola, idAlu)>
+            //corregir examen[idAlu]
+            examenCorregido[idAlu]= true;
+        }
     }
 }
