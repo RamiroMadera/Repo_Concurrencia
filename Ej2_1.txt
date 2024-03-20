@@ -1,0 +1,34 @@
+1. Un sistema operativo mantiene 5 instancias de un recurso almacenadas en una cola, cuando
+un proceso necesita usar una instancia del recurso la saca de la cola, la usa y cuando termina
+de usarla la vuelve a depositar.
+
+
+sem recurso[5] = ([5] 1); <-- al final lo hice distinto
+
+sem mutex = 1; barrera = 0;
+sem recurso = 5;
+cola c;
+
+Process inicializador{
+    for i=0 .. 4
+        encolar(c, i);
+    for i=0 .. N
+        V(barrera);
+}
+
+Process worker [id 0..N]{
+    P(barrera);
+    while(true){
+        P(recurso);
+        P(mutex);
+        desencolar(rec);
+        V(mutex);
+
+        //usar recurso;
+
+        P(mutex);
+        encolar(rec);
+        V(mutex);
+        V(recurso);
+    }
+}
