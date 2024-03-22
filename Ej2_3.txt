@@ -4,5 +4,48 @@ y si está bien le avisa al alumno que puede irse, si la tarea está mal le indi
 alumno corregirá esos errores y volverá a entregarle la tarea a la maestra para que realice la
 corrección nuevamente, esto se repite hasta que la tarea no tenga errores.
 
-sem eTer[N] = ([N] 0);
-int eEstado = 0;
+sem eCor[N] = ([N] 0);
+sem eLis = 0;
+bool eBien[40]= false;
+sen mutex = 1,mutex2=1;
+cola c;
+int fin=40;
+
+process alumno [id: 0..39]{
+  while (! eBien[id]){
+    //resolver examen
+    P(mutex);
+    encolar(c,id);
+    V(mutex);
+    V(eLis);
+    P(eCor[id]);
+  }
+  P(mutex2);
+  fin--;
+  V(mutex2);
+}
+
+process maestra {
+  int aux;
+  P(mutex2);
+  while (fin != 0){
+    V(mutex2);
+    P(eLis);
+    P(mutex);
+    desencolar(c,aux);
+    V(mutex);
+    // corrijo
+    if (esta bien){
+      eBien[aux]= true;
+    } else {
+      / /escribir correciones;
+    }
+    V(eCor[aux]);
+    P(mutex2);
+  }
+  V(mutex2);
+}
+
+
+
+usar variable local en lugar de eList
