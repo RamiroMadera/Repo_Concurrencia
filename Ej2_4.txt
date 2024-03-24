@@ -162,5 +162,55 @@ process empleado {
 f) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le indica
 a la persona cuando puede usar una fotocopiadora, y cual debe usar.
 
+cola c;
+cola cf;
+sem mutex = 1, mutex2 = 1;
+sem espera[N] = ([N] 0);
+int numFot[N];
+sem libre = 10;
+sem pedidos = 0;
 
 
+process persona[id: 0..N-1]{
+    int fid;
+
+    P(mutex);
+    push(c);
+    V(mutex);
+
+    V(pedidos);
+    P(espera[id]);
+    fid = numFot[id]
+    Fotocopiar(fid);
+
+    P(mutex2);
+    push(cf,fid);
+    V(mutex2);
+
+    V(libre);
+}
+
+process empleado {    
+    int pid, cantFaltante = N;
+    int fid;
+
+    for (i = 0..9){
+        push(cf,i);             -- cola que va a contener la impresoras libres;
+    }
+
+    while (cantFaltante > 0){
+        P(pedidos);
+        P(mutex);
+        pull(c, pid);
+        V(mutex);
+
+        P(libre);
+        P(mutex2);
+        pull(cf,fid);
+        V(mutex2);
+
+        numFot[pid] = fid;
+        V(espera[pid]);
+        cantFaltante--;
+    }
+}
