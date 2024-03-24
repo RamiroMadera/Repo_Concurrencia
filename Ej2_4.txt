@@ -82,14 +82,83 @@ c) Modifique la solución de (b) para el caso en que se deba dar prioridad de ac
 edad de cada persona (cuando la fotocopiadora está libre la debe usar la persona de mayor
 edad entre las que estén esperando para usarla).
 
+cola c;
+sem mutex = 1;
+sem lib[N] = ([N] 0);
+boolean libre = true;
 
+process persona[id: 0..N-1]{
+    int aux;
+    int edad = rand() % 100;
+    P(mutex);
+    if (libre) {
+        libre = false;
+        V(mutex);
+    } else {
+        encolarOrdenado(c, id, edad);     --Preguntar
+        V(mutex);
+        P(lib[id]);
+    }
+    Fotocopiar();
+    P(mutex);
+    if(empty(C)){
+        libre = true;
+    } else {
+        desencolar(c, aux);
+        V(lib[aux]);
+    }
+    V(mutex);
+}
 
 
 d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
 dado por el identificador del proceso (la persona X no puede usar la fotocopiadora hasta
 que no haya terminado de usarla la persona X-1).
+
+sem espera[N] = ([N] 0);
+
+process persona[id: 0..N-1]{
+    if(id=0){
+        Fotocopiar();
+    } else {
+        V(espera[id]);
+        Fotocopiar();
+    }
+    P(espera[id+1]);
+}
+
 e) Modifique la solución de (b) para el caso en que además haya un Empleado que le indica
 a cada persona cuando debe usar la fotocopiadora.
+
+cola c;
+sem mutex = 1;
+sem espera[N] = ([N] 0);
+sem libre = 1;
+sem pedidos = 0;
+
+process persona[id: 0..N-1]{
+    P(mutex);
+    push(c);
+    V(mutex);
+    V(pedidos);
+    P(espera[id]);
+    Fotocopiar();
+    V(libre);
+}
+
+process empleado {
+    int aux, cantFaltante = N;
+    while (cantFaltante > 0){
+        P(pedidos);
+        P(mutex);
+        pull(c, aux);
+        V(mutex);
+        V(espera[aux]);
+        P(libre);
+        cantFaltante--;
+    }
+}
+
 f) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le indica
 a la persona cuando puede usar una fotocopiadora, y cual debe usar.
 
