@@ -50,3 +50,46 @@ process maestra {
 CORRECCIONES:
 1) Usar variable local en lugar de eList
 2) Antes de la resolucion del examen, la maestra tiene que entregar examenes (tareas actually) DIFERENTES a cada alumno (como?? No me acuerdo)
+
+sem eCor[N] = ([N] 0);
+sem eLis = 0;
+sem entrega[N] = ([N] 0);
+bool eBien[40]= false;
+sen mutex = 1,mutex2=1;
+cola c;
+
+process alumno [id: 0..39]{
+  while (! eBien[id]){
+    P(entrega[i]);
+    //resolver examen
+    P(mutex);
+    encolar(c,id);
+    V(mutex);
+    V(eLis);
+    P(eCor[id]);
+  }
+}
+
+process maestra {
+  for (i = 0..39){
+    tarea[i]= asignarRandom();
+    V(entrega[i]);
+  }
+
+  int fin=40;
+  int aux;
+  while (fin != 0){
+    P(eLis);
+    P(mutex);
+    desencolar(c,aux);
+    V(mutex);
+    // corrijo
+    if (esta bien){
+      eBien[aux]= true;
+      fin--;
+    } else {
+      / /escribir correciones;
+    }
+    V(eCor[aux]);
+  }
+}
