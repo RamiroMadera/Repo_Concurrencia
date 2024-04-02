@@ -5,3 +5,75 @@ dato); si aún hay lugar en la combi seleccionada se le da el pasaje y se dirige
 en caso contrario se retira. Cada combi espera a que suban los 25 pasajeros, luego realiza el
 viaje, y cuando llega al destino deja bajar a todos los pasajeros. Nota: maximizar la
 concurrencia; suponga que para cada combi al menos 25 clientes intentarán comprar pasaje.
+
+int cant[4] = ([4] 0);      //vector que guarda la cantidad de pasajeros en cada combi
+sem mutex = 1;              //semaforo para uso exclusivo de la cola
+cola c;                     //cola de clientes que quieren comprar
+sem espera[C] = ([C] 0);    //semaforos privados para el uso de la cola
+sem barrera[4] = ([4] 0);   //sem para avisar a la combi que puede salir
+sem colaOcupada = 0;        //sem que cuenta la cantidad de gente en la cola
+int numCombi[C];            //vector del numero de combi que quiere cada cliente
+bool sube[C];               //vector que indica si el cliente consiguió lugar en la combi
+int pasajeros[4][25];       //matriz🙄 que guarda los IDs de los clientes que van en cada combi
+
+proccess persona [id : 0..C]{
+    int N = rand() % 4; ---> numero de colectivo
+    numCombi[id] = N;
+    
+    P(mutex);    
+    push(c, id);        //encola
+    V(mutex);
+
+    V(colaOcupada);     //avisa al vendedor que hay alguien esperando
+
+    P(espera[id]);      //espera a que el vendedor le dé o no pase 
+
+    if (sube[id]){      //si pudo subir, va a esperar que la combi llegue y se pueda bajar
+        P(espera[id]); //se baja
+    }
+
+}
+
+proccess vendedor {
+    int fin = C;
+    int cliente, combi;
+
+    while(fin != 0){
+            
+        P(colaOcupada);         //espero a que llegue un cliente
+
+        P(mutex);
+        cliente = pull(c);      //guardo su id
+        V(mutex);
+
+        combi = numCombi[cliente];      //guardo la combi que quiere
+
+        if (cant[combi] < 25){ 
+            sube[cliente]=true;     //le aviso que puede viajar
+            V(espera[cliente]);
+
+            pasajeros[ combi ][ (cant[combi]) ] = cliente;      //anoto el cliente que subió a la combi
+            cant[combi]++;
+
+            if(cant[combi] == 25)       //verifico si la combi está llena y en ese caso le aviso que puede salir
+                V(barrera[combi]);
+        }else{
+            sube[cliente]=false;    //le aviso que no puede viajar
+            V(espera[cliente]);
+        }
+
+        fin--;
+    }
+}
+
+
+
+proccess combi [id : 0..3]{
+
+    P(barrera[i]);
+    //viaja rum rum
+
+    for(i = 0..24){             //avisa a todos los pasajeros que se bajen
+        V( espera[ (pasajeros[id][i]) ] );
+    }
+}
