@@ -1,0 +1,55 @@
+7. En una herrería hay 15 empleados que forman 5 grupos de 3 personas; los grupos se forman
+de acuerdo al orden de llegada (los 3 primeros pertenecen al grupo 1, los 3 siguientes al grupo
+2, y así sucesivamente). Ni bien conoce el grupo al que pertenece el empleado comienza a
+trabajar (no debe esperar al resto de grupo para comenzar). Cada grupo debe hacer
+exactamente P unidades de un producto (cada unidad es hecha por un único empleado). Al
+terminar de hacer las P unidades de un grupo, sus 3 empleados se retiran. Nota: maximizar
+la concurrencia; ningún grupo puede hacer unidades de más.
+
+bool libre = true;
+cola c;
+sem mutex = 1;
+int grupo[5] = ([5] 3);         //vector que primero se usa para crear los grupos y luego para contar la cantidad de unidades creadas
+int grupoAct = 0;               //variable compartida para asignar los grupos
+sem mutex[5] = ([5] 1);         //mutex privados a cada grupo para modificar el contador de productos
+
+
+process empleado [id: 0..14]{
+    int grupo, aux;
+
+    P(mutex);
+    if(libre){
+        libre = false;
+        V(mutex);
+    }else{
+        push(c, id);
+        V(mutex);
+        P(esperar[id]);
+    }
+    grupo = grupoAct;           //asigna el grupo
+    grupo[grupo]--;             //incremento la cantidad de integrantes
+    if (grupo[grupo] == 0){
+        grupoAct++;             //en caso de que no hayan más cupos en el grupo, actualizo grupoAct
+    }
+
+    P(mutex);
+    if(empty(c)){
+        libre = true;
+        V(mutex);
+    } else {
+        pull(c,aux);
+        V(espera[aux]);
+    }
+
+    P(mutex[grupo]);
+    while(grupo[grupo] < P){    //chequea si su grupo ya fabricó todas las unidades (o está terminando de fabricarlas)
+        grupo[grupo]++;         //aumenta en uno la cantidad de unidades asociada a su propio grupo
+        V(mutex[grupo]);
+
+        //fabrica un producto
+
+        P(mutex[grupo]);
+    }
+    V(mutex[grupo]);
+
+}
