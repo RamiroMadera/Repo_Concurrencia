@@ -121,10 +121,10 @@ process persona[id: 0..N-1]{
     if(id=0){
         Fotocopiar();
     } else {
-        V(espera[id]);
+        P(espera[id]);
         Fotocopiar();
     }
-    P(espera[id+1]);
+    V(espera[id+1]);
 }
 
 e) Modifique la solución de (b) para el caso en que además haya un Empleado que le indica
