@@ -1,0 +1,27 @@
+1. Implementar el acceso a una base de datos de solo lectura que puede atender a lo sumo 5
+consultas simultáneas.
+
+process usuario [id: 0..N]{
+    Admin.Acceder();
+    acceso();
+    Admin.Salir();
+}
+
+Monitor Admin{
+    int consLibres=5;
+    cond cola;
+
+    Procedure Acceder(){
+        while (consLibres == 0){
+            wait(cola);
+        }
+        consLibres-=1;
+    }
+
+    Procedure Salir(){
+        consLibres+=1;
+        signal(cola);
+    }
+
+
+}

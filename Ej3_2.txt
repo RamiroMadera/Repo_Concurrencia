@@ -1,0 +1,204 @@
+2. Existen N personas que deben fotocopiar un documento cada una. Resolver cada ítem
+usando monitores:
+a) Implemente una solución suponiendo que existe una única fotocopiadora compartida
+por todas las personas, y las mismas la deben usar de a una persona a la vez, sin
+importar el orden. Existe una función Fotocopiar() que simula el uso de la fotocopiadora.
+Sólo se deben usar los procesos que representan a las Personas (y los monitores que sean
+necesarios).
+
+process usuario [id: 0..N]{
+    Admin.fotocopiar();
+}
+
+Monitor Admin{
+    Process fotocopiar(){
+        Fotocopiar();
+    }
+}
+
+b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+process usuario [id: 0..N]{
+    Admin.Acceder(id);
+    Fotocopiar();
+    Admin.Salir();
+}
+
+Monitor Admin{
+    bool libre = true;
+    cond espera[N];
+    colaOrdenada c;
+
+    Procedure Acceder(int id){
+        if(libre){
+            libre = false;
+        } else {
+            push(c, id);
+            wait(espera[id]);
+        }
+    }
+
+    Procedure Salir(){
+        int id;
+        if(empty(c)){
+            libre = true;
+        } else {
+            id = pop(c);
+            signal(espera[id]);
+        }
+    }
+}
+
+
+c) Modifique la solución de (b) para el caso en que se deba dar prioridad de acuerdo a la
+edad de cada persona (cuando la fotocopiadora está libre la debe usar la persona de
+mayor edad entre las que estén esperando para usarla).
+
+process usuario [id: 0..N]{
+    Admin.Acceder(id, edad);
+    Fotocopiar();
+    Admin.Salir();
+}
+
+Monitor Admin{
+    bool libre = true;
+    cond espera[N];
+    colaOrdenada c;
+
+    Procedure Acceder(int id,int edad){
+        if(libre){
+            libre = false;
+        } else {
+            insertarOrdenado(c, (id,edad));
+            wait(espera[id]);
+        }
+    }
+
+    Procedure Salir(){
+        int id;
+        if(empty(c)){
+            libre = true;
+        } else {
+            id = pop(c,(id,edad));
+            signal(espera[id]);
+        }
+    }
+}
+
+d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la fotocopiadora
+hasta que no haya terminado de usarla la persona X-1).
+
+process usuario [id: 0..N]{
+    Admin.fotocopiar(id);
+}
+
+Monitor Admin{
+    int act=0;
+    cond espera[N+1];   //el +1 es para que no se rompa cuando termina el último usuario
+
+    Process fotocopiar(int id){
+        if(id > act){
+            wait(espera[id]);
+        }
+        Fotocopiar();
+        act++;
+        signal(espera[act]);
+    }
+}
+
+e) Modifique la solución de (b) para el caso en que además haya un Empleado que le indica
+a cada persona cuando debe usar la fotocopiadora.
+
+process usuario [id: 0..N]{
+    Admin.fotocopiar(id);
+}
+
+process empleado {
+    while(true){
+        Admin.administrar();
+    }
+}
+
+Monitor Admin{
+    cond espera[N];
+    colaOrdenada c;
+    cond empleado;          //despierta al empleado si la fila estaba vaía
+    cond libre;             //despierta al empleado luego de usar la fotocopiadora
+
+    Process fotocopiar(int id){
+        signal(empleado);           //esto podría estar en un if(empty(c))
+        push(c,id);
+        wait(espera[id]);
+        Fotocopiar();
+        signal(libre);
+    }
+
+    Process administrar(){
+        int id;
+        if (empty(c)) {
+            wait(empleado);
+        }
+        pop(c,id);
+        signal(espera[id]);
+        wait(libre);
+    }
+}
+
+f) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le
+indica a la persona cuando puede usar una fotocopiadora, y cual debe usar.
+
+process usuario [id: 0..N]{
+    Admin.acceder(id, idFoto);
+    Fotocopiar[idFoto]();
+    Admin.liberar(idFoto);
+}
+
+process empleado {
+    Admin.inicializar();
+    while(true){
+        Admin.administrar();
+    }
+}
+
+Monitor Admin{
+    int fotoAsig[N];
+    cola fLibres;
+    cond espera[N];
+    cola c;
+    cond empleado;          //despierta al empleado si la fila estaba vaía
+    cond libre;             //despierta al empleado luego de usar la fotocopiadora
+
+    Process acceder(int id,int idFoto){
+        signal(empleado);
+        push(c,id);
+        wait(espera[id]);
+        idFoto = fotoAsig[id];
+    }
+
+    Process liberar(int idFoto){
+        push(fLibres,idFoto);
+
+        signal(libre);
+    }
+
+    Process administrar(){
+        int id, idFoto;
+        if (empty(c)) {
+            wait(empleado);
+        }
+        pop(c,id);
+        if(empty(fLibres)){
+            wait(libre);
+        }
+        pop(fLibres,idFoto);
+        fotoAsig[id] = idFoto;
+        signal(espera[id]);
+    }
+
+    Process inicializar(){
+        for (i: 0..9){
+            push(fLibres,i);
+        }
+    }
+}
