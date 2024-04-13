@@ -1,0 +1,58 @@
+3. En un corralón de materiales hay un empleado que debe atender a N clientes de acuerdo al
+orden de llegada. Cuando un cliente es llamado por el empleado para ser atendido, le da una
+lista con los productos que comprará, y espera a que el empleado le entregue el
+comprobante de la compra realizada.
+
+
+process cliente [id: 1..N]{
+    texto lista, comprobante;
+    Admin.encolar();
+    Admin.atendido(lista,comprobante);
+}
+
+process empleado {
+    texto l, c;
+    while(true){
+        Admin.atenderInicio(l);
+        //lee los articulos de la lista, procesa la compra y prepara el comprobante
+        Admin.atenderFinal(c);
+    }
+}
+
+Monitor Admin{
+    
+    cola c;
+    cond espera[N];
+    cond empleado;
+    cond sinc;
+    int idAct;
+    texto datos[N];         //buffer para poner la lista y luego el comprobante
+
+    Process encolar(){      //preguntar si el id hay que mandarlo como parametro
+        signal(empleado);
+        push(c,id);
+        wait(espera[id]);
+    }
+
+    Process atendido(texto l, texto c){
+        datos[id]= l;
+        signal(sinc);
+        wait(espera[id]);
+        c = datos[id];
+    }
+
+    Process atenderInicio(texto l){
+        if (empty(c)) {
+            wait(empleado);
+        }
+        pull(c,idAct);
+        signal(espera[idAct]);
+        wait(sinc);
+        l = datos[idAct];
+    }
+
+    Process atenderFinal(texto c){
+        datos[idAct] = c;
+        signal(espera[idAct]);
+    }
+}
