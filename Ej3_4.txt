@@ -1,0 +1,97 @@
+4. En una mesa de exámenes hay 3 profesores que les deben tomar un examen oral a 30 alumnos
+de acuerdo al orden de llegada. Cada examen es tomado por un único profesor. Cuando un
+alumno llega, espera a que alguno de los profesores (cualquiera) lo llame y se dirige al
+escritorio correspondiente a ese profesor, donde le tomará el examen; al terminar el
+profesor le da la nota y el alumno se retira. Cuando un profesor está libre llama al siguiente
+alumno. Nota: todos los procesos deben terminar su ejecución.
+
+
+
+Process alumno [id: 0..29]{
+    int profe;
+    Cola.encolar(p);
+    Escritorio[p].resolverExamen(nota);
+}
+
+Process profesor [id: 0..2]{
+    bool fin = false;
+    int alu;
+    text examen[30];
+    Inicializar(examen);
+
+    while (!fin){
+        Cola.desencolar(fin, alu);
+        if(!fin){
+            Escritorio.tomarExamen(alu, examen[alu]);
+        }
+    }
+}
+
+Monitor Escritorio{
+    bool aluSentado = false;
+    text examen;
+    int nota;
+    cond profe,alumno,examenTerminado,NotaLista;
+
+    Process resolverExamen(int n){
+        aluSentado = true;          //sincronización previa al examen
+        signal(profe);              |
+        wait(alumno);               //
+
+        resolver(examen);
+
+        signal(examenTerminado);
+        wait(NotaLista);
+        n = nota;
+        aluSentado = false;
+        signal(profe);
+    }
+
+    Process tomarExamen(int alu, text e){
+        examen = e;
+        
+        if(aluSentado){             //sincronización previa al examen
+            signal(alumno);         |
+        } else {                    |
+            wait(profe);            |
+            signal(alumno);         |
+        }                           //
+
+        wait(examenTerminado);
+        corregir(examen,nota);
+        signal(notaLista);
+
+        wait(profe);
+    }
+}
+
+Monitor Cola{
+    cola c;
+    cond espera[30];
+    int profAsignado[30];
+    cond despertarProfesores;
+    int alumnFaltantes = 30;
+
+    Process encolar(int p){
+        signal_all(despertarProfesores);
+        push(c, id);
+        wait(espera[id]);
+        p = profAsignado[id];
+    }
+
+    Process desencolar(bool fin,int alu){
+        while (empty(c) && (alumnFaltantes != 0)) {
+            wait(despertarProfesores);
+        }
+        if (alumnFaltantes == 0){
+            fin = true;
+        } else {
+            pop(c, alu);
+            alumnFaltantes--;
+            if (alumnFaltantes == 0)
+                signal_all(despertarProfesores);
+            profAsignado[alu]= id;
+            signal(espera[alu]);
+        }
+    }
+}
