@@ -27,6 +27,37 @@ Process profesor [id: 0..2]{
     }
 }
 
+Monitor Cola{
+    cola c;
+    cond espera[30];
+    int profAsignado[30];
+    cond despertarProfesores;
+    int alumnFaltantes = 30;
+
+    Process encolar(int p){
+        signal_all(despertarProfesores);
+        push(c, id);
+        wait(espera[id]);
+        p = profAsignado[id];
+    }
+
+    Process desencolar(bool fin,int alu){
+        while (empty(c) && (alumnFaltantes != 0)) {
+            wait(despertarProfesores);
+        }
+        if (alumnFaltantes == 0){
+            fin = true;
+        } else {
+            pop(c, alu);
+            alumnFaltantes--;
+            if (alumnFaltantes == 0)
+                signal_all(despertarProfesores);
+            profAsignado[alu]= id;
+            signal(espera[alu]);
+        }
+    }
+}
+
 Monitor Escritorio{
     bool aluSentado = false;
     text examen;
@@ -62,36 +93,5 @@ Monitor Escritorio{
         signal(notaLista);
 
         wait(profe);
-    }
-}
-
-Monitor Cola{
-    cola c;
-    cond espera[30];
-    int profAsignado[30];
-    cond despertarProfesores;
-    int alumnFaltantes = 30;
-
-    Process encolar(int p){
-        signal_all(despertarProfesores);
-        push(c, id);
-        wait(espera[id]);
-        p = profAsignado[id];
-    }
-
-    Process desencolar(bool fin,int alu){
-        while (empty(c) && (alumnFaltantes != 0)) {
-            wait(despertarProfesores);
-        }
-        if (alumnFaltantes == 0){
-            fin = true;
-        } else {
-            pop(c, alu);
-            alumnFaltantes--;
-            if (alumnFaltantes == 0)
-                signal_all(despertarProfesores);
-            profAsignado[alu]= id;
-            signal(espera[alu]);
-        }
     }
 }

@@ -1,0 +1,105 @@
+5. Suponga una comisión con 50 alumnos. Cuando los alumnos llegan forman una fila, una
+vez que están los 50 en la fila el jefe de trabajos prácticos les entrega el número de grupo
+(número aleatorio del 1 al 25) de tal manera que dos alumnos tendrán el mismo número de
+grupo (suponga que el jefe posee una función DarNumero() que devuelve en forma aleatoria
+un número del 1 al 25, el jefe de trabajos prácticos no guarda el número que le asigna a
+cada alumno). Cuando un alumno ha recibido su número de grupo comienza a realizar la
+práctica. Al terminar de trabajar, el alumno le avisa al jefe de trabajos prácticos y espera la
+nota. El jefe de trabajos prácticos, cuando han llegado los dos alumnos de un grupo les
+devuelve a ambos la nota del GRUPO (el primer grupo en terminar tendrá como nota 25, el
+segundo 24, y así sucesivamente hasta el último que tendrá nota 1).
+
+
+Process alumno[id: 0..49]{
+    int g;
+
+    Admin.encolar(g);
+    //trabajar
+    Escritorio.termine(g, nota);
+
+}
+
+Process jtp{
+    int aluPorGrupo[26] = ([26] 0);         /tamaño 26 pq va a ir de 0 a 25, la primer celda no se usa
+    int aluFaltantes = 50;
+    int grupo;
+
+    Admin.esperar();
+    while (aluFaltantes != 0){
+            grupo = DarNumero();
+        while (aluPorGrupo[grupo] < 2)
+            grupo = DarNumero();
+        
+        Admin.desencolar(grupo);
+        aluPorGrupo[grupo]++;
+        aluFaltantes--;
+    }
+
+    aluFaltantes = 50;
+
+    while (aluFaltantes != 0){
+        Escritorio.corregir();
+        aluFaltantes--;   
+    }
+
+}
+
+
+Monitor Admin{
+    cola c;
+    cond espera[50];
+    cond despertar;
+    int cantFila = 0;
+    int grupoAsignado[50];
+
+    Process encolar(int g){
+        push(c,id);
+        cantFila++;
+        if (cantFila == 50)
+            signal(despertar);
+        wait(espera[id]);
+
+        g = grupoAsginado[id];
+    }
+
+    Process esperar(){
+        if(cantFila != 50)
+            wait(despertar);
+    }
+
+    Process desencolar(int g){
+        int alu;
+        pop(c, alu);
+        grupoAsginado[alu] = g;
+        signal(espera[alu]);
+    }
+}
+
+Monitor Escritorio{
+    cola c;                     //cola que va a guardar los grupos de los alumnos que van terminando
+    cond esperaGrupo[26];       //var cond privadas para que el alumno espere a que su grupo tenga nota
+    int nota[26];               //arreglo para la nota del grupo
+    int aluPorGrupo[26] = ([26] 0);     //arreglo que guarda la cant de alumnos que terminaron en cada grupo
+    int notaAct = 25;
+
+    Process termine(int g, int n){
+        push(c,g);
+        signal(despertar);
+        wait(esperaGrupo[g]);
+
+        n = nota[g];
+    }
+
+    Process corregir(){
+        int grupo;
+        if (empty(c))
+            wait(despertar);
+        pop(c,grupo);
+        aluPorGrupo[grupo]++;
+        if(aluPorGrupo[grupo] == 2){
+            nota[grupo] = notaAct;
+            notaAct--;
+            signal_all(esperaGrupo[grupo]);
+        }
+    }
+}
