@@ -1,0 +1,52 @@
+4. Simular la atención en un locutorio con 10 cabinas telefónicas, que tiene un empleado que
+se encarga de atender a los clientes. Hay N clientes que al llegar esperan hasta que el
+empleado les indica a que cabina ir, la usan y luego se dirigen al empleado para pagarle. El
+empleado atiende a los clientes en el orden en que hacen los pedidos, pero siempre dando
+prioridad a los que terminaron de usar la cabina. Nota: maximizar la concurrencia; suponga
+que hay una función Cobrar() llamada por el empleado que simula que el empleado le cobra
+al cliente.
+
+chan privado[0..N-1](int);
+chan pedidoEntrada(int);
+chan liberarCabina(int,int);
+chan despertar(int);
+
+Process cliente[id:0.. N-1]{
+    int num;
+
+    send pedidoEntrada(id);
+    send despertar(0);
+    receive privado[id](num);
+    //usa la cabina
+    send liberarCabina(num,id);
+    send despertar(1);
+
+}
+
+Process empleado{
+    cola c;
+    for i:0..9{
+        push(c,i);
+    }
+    
+    int cantDisp=10;
+    int Cid,num,aux;
+
+    
+
+    while(true){
+        receive despertar(aux);
+
+        if(!empty(liberarCabina)){
+            receive liberarCabina(num,Cid);
+            push(c,num);
+            cantDisp++;
+            Cobrar(Cid);
+        } else if ((!empty(pedidoEntrada)) && cantDisp>0){
+            receive pedidoEntrada(Cid);
+            pop(c,num);
+            cantDisp--;
+            send privado[Cid](num);
+        }
+    }
+}
