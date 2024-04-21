@@ -1,0 +1,22 @@
+1. Suponga que N personas llegan a la cola de un banco. Para atender a las personas existen 2
+empleados que van atendiendo de a una y por orden de llegada a las personas.
+
+
+chan pedido(int);
+chan respuesta[0..N-1](int);
+
+Process Persona[id: 0..N-1]{
+    int idEmp;
+    send pedido(id);
+    receive respuesta[id](idEmp);
+    //es atendido por el empleado idEmp
+}
+
+Process Empleado[id: 0..1]{
+    int idPer;
+    while(true){
+        receive pedido(idPer);
+        send respuesta[idPer](id);
+        //atiende a idPer
+    }
+}
