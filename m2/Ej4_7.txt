@@ -16,7 +16,7 @@ Process buffer{
     cola c;
     string dir;
     do  robot?direccion(dir)->  push(c,dir);
-        analizador?pedido()->   pull(c,dir);
+        not empty(c); analizador?pedido()->   pull(c,dir);
                                 analizador!envio(dir);
     od;
 }

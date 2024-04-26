@@ -17,7 +17,7 @@ Process buffer{
     cola c;
     muestra m;
     do  preparador?ADN(m) -> push(c,m);
-        armador?pedido() -> pull(c,m);
+        not empty(c); armador?pedido() -> pull(c,m);
                       armador!envio(m);
     od
 }
