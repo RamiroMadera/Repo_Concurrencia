@@ -30,6 +30,7 @@ process admin{
     do  alumno?examenTerminado(Aid,e);   -> push(c,Aid,e);
         not empty(c); profesor[*]?pedido(Pid); -> pull(c,Aid,e);
                                                   profesor[Pid]!envio(Aid,e); 
+    od
 }
 
 process profesor[id:0..2]{
