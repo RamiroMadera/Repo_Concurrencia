@@ -2,6 +2,28 @@
 lugar para que 7 camiones a la vez descarguen pero no pueden ser más de 5 del mismo tipo
 de cereal. Nota: sólo se pueden usar procesos que representen a los camiones.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//solucion demasiado complicada
+    I
+    I
+    V
+
 sem cam = 7;
 int T = 0, M = 0;
 sem mutexT = 1,mutexM = 1;

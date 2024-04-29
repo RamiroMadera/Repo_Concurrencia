@@ -57,8 +57,11 @@ sem entrega[N] = ([N] 0);
 bool eBien[40]= false;
 sen mutex = 1,mutex2=1;
 cola c;
+text tarea[40];
 
 process alumno [id: 0..39]{
+  P(entrega[i]);
+
   while (! eBien[id]){
     P(entrega[i]);
     //resolver examen
