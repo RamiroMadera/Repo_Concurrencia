@@ -10,38 +10,33 @@ bool libre = true;
 cola c;
 sem mutex = 1;
 int grupo[5] = ([5] 3);         //vector que primero se usa para crear los grupos y luego para contar la cantidad de unidades creadas
-int grupoAct = 0;               //variable compartida para asignar los grupos
+int grupoAct = 1;               //variable compartida para asignar los grupos
 sem mutex[5] = ([5] 1);         //mutex privados a cada grupo para modificar el contador de productos
 
+sem barrera[5] = ([5] 0);
+sem mutexlis[5] = ([5] 1);
+int lis[5] = ([5] 0);
 
 process empleado [id: 0..14]{
     int grupo, aux;
 
     P(mutex);
-    if(libre){
-        libre = false;
-        V(mutex);
-    }else{
-        push(c, id);
-        V(mutex);
-        P(esperar[id]);
-    }
+    if(libre){libre = false; V(mutex);
+    }else{push(c, id); V(mutex); P(esperar[id]);}
+
     grupo = grupoAct;           //asigna el grupo
-    grupo[grupo]--;             //incremento la cantidad de integrantes
-    if (grupo[grupo] == 0){
+    grupo[grupo-1]--;             //decremento la cantidad de vacantes
+    if (grupo[grupo-1] == 0){
         grupoAct++;             //en caso de que no hayan más cupos en el grupo, actualizo grupoAct
     }
 
     P(mutex);
-    if(empty(c)){
-        libre = true;
-        V(mutex);
-    } else {
-        pull(c,aux);
-        V(espera[aux]);
-    }
+    if(empty(c)){libre = true;}
+    else{pop(c,aux); V(espera[aux]);}
+    V(mutex);
 
     P(mutex[grupo]);
+
     while(grupo[grupo] < P){    //chequea si su grupo ya fabricó todas las unidades (o está terminando de fabricarlas)
         grupo[grupo]++;         //aumenta en uno la cantidad de unidades asociada a su propio grupo
         V(mutex[grupo]);
@@ -51,5 +46,12 @@ process empleado [id: 0..14]{
         P(mutex[grupo]);
     }
     V(mutex[grupo]);
+
+    P(mutexlis[grupo]);
+    lis[grupo]++;
+    if (lis[grupo] == 5)
+        for(i=0..4) V(barrera[grupo]);
+    P(mutexlis[grupo]);
+    P(barrera[grupo]);
 
 }
