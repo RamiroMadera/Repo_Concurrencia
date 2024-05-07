@@ -1,0 +1,82 @@
+3. Se dispone de un sistema compuesto por 1 central y 2 procesos. Los procesos envían
+señales a la central. La central comienza su ejecución tomando una señal del proceso 1,
+luego toma aleatoriamente señales de cualquiera de los dos indefinidamente. Al recibir una
+señal de proceso 2, recibe señales del mismo proceso durante 3 minutos.
+El proceso 1 envía una señal que es considerada vieja (se deshecha) si en 2 minutos no fue
+recibida.
+El proceso 2 envía una señal, si no es recibida en ese instante espera 1 minuto y vuelve a
+mandarla (no se deshecha).
+
+PROCEDURE señales IS
+
+TASK p1;
+TASK p2;
+TASK central IS
+    ENTRY senial1(s: IN senial);
+    ENTRY senial2(s: IN senial);
+    ENTRY listo;
+END central;
+TASK reloj IS
+    ENTRY comenzar;
+END reloj;
+
+TASK BODY p1 IS
+s:senial;
+BEGIN
+    LOOP 
+        s:=generar();
+        SELECT
+            central.senial1(s);
+        OR DELAY 3min
+        END SELECT;
+    END LOOP;
+END p1;
+
+TASK BODY p2 IS 
+s:senial;
+BEGIN
+    s:=generar();
+    LOOP
+        SELECT
+            central.senial2(s);
+            s:=generar();
+        ELSE
+            delay(1min);
+        END SELECT
+    END LOOP;
+END p2;
+
+TASK BODY central IS
+    solo2:boolean;
+    s:senial;
+BEGIN
+    solo2:=false;
+    accept senial1(s);
+    LOOP 
+        SELECT
+            WHEN(solo2=false) => ACCEPT senial1(s);
+        OR
+            WHEN(listo'count = 0)ACCEPT senial2(s);
+            if(solo2=false) then
+                solo2:=true;
+                reloj.comenzar;
+            end if;
+        OR 
+            ACCEPT listo;
+            solo2:=false;
+        END SELECT;
+    END LOOP;
+END central;
+
+TASK BODY reloj IS
+BEGIN
+    LOOP
+        ACCEPT comenzar;
+        delay(3min);
+        central.listo;
+    END LOOP;
+END reloj;
+
+BEGIN
+    null;
+END central;

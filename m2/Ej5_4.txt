@@ -1,0 +1,107 @@
+4. En una clínica existe un médico de guardia que recibe continuamente peticiones de
+atención de las E enfermeras que trabajan en su piso y de las P personas que llegan a la
+clínica ser atendidos.
+Cuando una persona necesita que la atiendan espera a lo sumo 5 minutos a que el médico lo
+haga, si pasado ese tiempo no lo hace, espera 10 minutos y vuelve a requerir la atención del
+médico. Si no es atendida tres veces, se enoja y se retira de la clínica.
+Cuando una enfermera requiere la atención del médico, si este no lo atiende inmediatamente
+le hace una nota y se la deja en el consultorio para que esta resuelva su pedido en el
+momento que pueda (el pedido puede ser que el médico le firme algún papel). Cuando la
+petición ha sido recibida por el médico o la nota ha sido dejada en el escritorio, continúa
+trabajando y haciendo más peticiones.
+El médico atiende los pedidos teniendo dándoles prioridad a los enfermos que llegan para ser
+atendidos. Cuando atiende un pedido, recibe la solicitud y la procesa durante un cierto
+tiempo. Cuando está libre aprovecha a procesar las notas dejadas por las enfermeras.
+
+
+PROCEDURE clinica BEGIN
+
+TASK TYPE personas;
+TASK TYPE enfermeras;
+TASK medico IS
+    ENTRY pedidoP;
+    ENTRY pedidoE(n: IN OUT text);
+    ENTRY nota(n: IN OUT text);
+END medico;
+TASK escritorio IS
+    ENTRY nota(n: IN text);
+END escritorio;
+
+persona: ARRAY(1..P) OF personas;
+enfermera: ARRAY(1..E) OF enfermeras;
+
+TASK BODY personas IS
+    v:integer;
+BEGIN
+    v=0;
+    while(v<3) do
+        SELECT
+            medico.pedidoP;
+        OR DELAY 5min
+            delay(10min);
+            v++;
+        END SELECT;
+    end while;
+END persona;
+
+TASK BODY enfermeras IS
+    n:text;
+BEGIN
+    LOOP
+        n:= generarNota();
+        SELECT
+            medico.pedidoE(n);
+        ELSE
+            escritorio(n);
+        END SELECT;
+    END LOOP;
+END enfermeras;
+
+TASK BODY medico IS
+BEGIN
+    LOOP
+        SELECT
+            ACCEPT pedidoP DO
+                delay(rand);
+            END pedidoP;
+        OR
+            WHEN (pedidoP'count = 0) => ACCEPT pedidoE (n: IN OUT text) DO
+                                            resolver(n);
+                                            delay(rand);
+                                        END pedidoE;
+        OR
+            WHEN (pedidoP'count = 0)&&(pedidoE'count = 0) => ACCEPT nota(n: IN OUT text) DO
+                                            resolver(n);
+                                            delay(rand);
+                                        END nota;
+        END SELECT;
+    END LOOP;
+END medico;
+
+TASK BODY escritorio IS
+    cn,cr:colaDeNotas;
+    nAux:text;
+BEGIN
+    LOOP
+        SELECT
+            ACCEPT nota(n: IN text) DO
+                nAux:=n;
+            END nota;
+            push(cn,nAux);
+        END SELECT;
+
+        if(empty(cn)=false) then
+            SELECT
+                pop(cn,n);
+                medico.nota(n);
+                push(cr,n);
+            ELSE
+                null;
+            END SELECT;
+        end if;
+    END LOOP;
+END escritorio;
+
+BEGIN
+    null;
+END clinica;
