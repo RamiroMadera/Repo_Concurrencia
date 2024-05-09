@@ -1,0 +1,109 @@
+6. En una playa hay 5 equipos de 4 personas cada uno (en total son 20 personas donde cada
+una conoce previamente a que equipo pertenece). Cuando las personas van llegando
+esperan con los de su equipo hasta que el mismo esté completo (hayan llegado los 4
+integrantes), a partir de ese momento el equipo comienza a jugar. El juego consiste en que
+cada integrante del grupo junta 15 monedas de a una en una playa (las monedas pueden ser
+de 1, 2 o 5 pesos) y se suman los montos de las 60 monedas conseguidas en el grupo. Al
+finalizar cada persona debe conocer grupo que más dinero junto. Nota: maximizar la
+concurrencia. Suponga que para simular la búsqueda de una moneda por parte de una
+persona existe una función Moneda() que retorna el valor de la moneda encontrada.
+
+PROCEDURE playa
+
+TASK TYPE personas IS
+    ENTRY Identif(iden: IN int);
+    ENTRY sinc(n: IN int);
+    ENTRY res(g: IN int);
+END personas;
+TASK TYPE grupos IS
+    ENTRY Identif(iden: IN int);
+    ENTRY sinc(ID:IN int; n: IN int);
+END grupos;
+TASK admin IS
+    ENTRY res(g: IN int; c: IN int);
+END admin;
+
+persona: ARRAY(1..20) of personas;
+grupo: ARRAY(1..5) of grupos;
+
+TASK BODY personas IS
+    g,ganador:int;
+    c:int;
+    id:int;
+BEGIN
+    ACCEPT Identif(iden: IN int) DO
+        id=iden;
+    END Identif;
+    c=0;
+    grupo(g).sinc(id,c);                // se pueden hacer entrys con mismo nombre pero estructura 
+    ACCEPT sinc(n: IN int);             // diferente en distintas partes del codigo?
+
+    for i in 1..15 loop
+        c+= Moneda();
+    end loop;
+
+    grupo(g).sinc(id,c);
+    ACCEPT sinc(n: IN int) DO
+        ganador:=n;
+    END sinc;
+
+END personas;
+
+TASK BODY grupo IS
+    per:ARRAY(1..4) OF int;
+    suma,id,ganador: int;
+BEGIN
+    ACCEPT Identif(iden: IN int) DO
+        id=iden;
+    END Identif;
+    suma:=0;
+    for i in 1..4 loop
+        ACCEPT sinc(ID:IN int; n: IN int) DO
+            per(i):=ID;
+        END sinc;
+    end loop;
+
+    for i in 1..4 loop
+        persona(per(i)).sinc(0);
+    end loop;
+
+    
+    for i in 1..4 loop
+        ACCEPT sinc(ID:IN int; n: IN int) DO
+            suma+=n;
+        END sinc;
+    end loop;
+
+    admin.res(id,suma);
+
+END grupo;
+
+
+TASK BODY admin IS
+    ganador:int;
+    cant: ARRAY(1..5) of int;
+BEGIN
+    for i in 1..20 loop
+        persona(i).Identif(i);
+    end loop;
+    
+    for i in 1..5 loop
+        grupo(i).Identif(i);
+    end loop;
+
+    for i in 1..5 loop
+        ACCEPT res(g: IN int; c: IN int) DO
+            cant(g):=c;
+        END res;
+    end loop;
+
+    ganador:=devolverPosMayor(cant);
+
+    for i in 1..20 loop
+        persona(i).sinc(ganador);
+    end loop;
+END admin;
+
+BEGIN
+    null;
+END playa;
