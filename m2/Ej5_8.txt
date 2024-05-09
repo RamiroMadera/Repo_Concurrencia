@@ -1,0 +1,83 @@
+8. Una empresa de limpieza se encarga de recolectar residuos en una ciudad por medio de 3
+camiones. Hay P personas que hacen continuos reclamos hasta que uno de los camiones
+pase por su casa. Cada persona hace un reclamo, espera a lo sumo 15 minutos a que llegue
+un camión y si no vuelve a hacer el reclamo y a esperar a lo sumo 15 minutos a que llegue
+un camión y así sucesivamente hasta que el camión llegue y recolecte los residuos; en ese
+momento deja de hacer reclamos y se va. Cuando un camión está libre la empresa lo envía a
+la casa de la persona que más reclamos ha hecho sin ser atendido. Nota: maximizar la
+concurrencia.
+
+PROCEDURE limpieza IS
+BEGIN
+TASK TYPE personas IS
+    ENTRY confirmacion;
+    ENTRY Identif(iden:IN int);
+END personas;
+TASK TYPE camion IS
+    ENTRY ir(id: IN int);
+END camion;
+TASK empresa IS
+    ENTRY reclamo(id: IN int);
+    ENTRY pedir(id: OUT int);
+END empresa;
+
+persona: ARRAY(1..P) OF personas;
+camion: ARRAY(1..3) OF camiones;
+
+TASK BODY personas IS
+    id:int;
+    llego: boolean;
+BEGIN
+    ACCEPT Identif(iden:IN int) DO
+        id:=iden;
+    END Identif;
+    llego:=false;
+    while(llego == false) loop
+        empresa.reclamo(id);
+        SELECT
+            ACCEPT confirmacion;
+            llego:=true;
+        OR DELAY 15min;
+            null
+        END SELECT;
+    end loop;
+END personas;
+
+TASK BODY camion IS
+    pId,id:int;
+BEGIN
+    LOOP
+        empresa.pedir(pId);
+        //ir a la casa del cliente pId (asumo que tarda menos de 15 min)
+        persona(pId).confirmacion;
+    END LOOP;
+END camion;
+
+TASK empresa IS
+    persona: ARRAY(1..P) of int;
+    auxId:int;
+BEGIN
+    for i in 1..P loop
+        persona(i).Identif(i);
+        persona(i):=0;
+    end loop;
+
+    LOOP
+        SELECT
+            WHEN(pedir'count==0) => ACCEPT reclamo(id: IN int) DO
+                                        if (persona(id)!=-1) do
+                                            persona(id)++;
+                                        end if;
+                                    END reclamo;
+        OR
+            ACCEPT pedir(pId: OUT int) DO
+                pId:=devolverPosMayor(persona);
+            END pedir;
+            persona(devolverPosMayor(persona)):=-1;
+        END SELECT;
+    END LOOP;
+END empresa;
+
+BEGIN 
+    null;
+END limpieza;
