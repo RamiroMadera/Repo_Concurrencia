@@ -18,11 +18,11 @@ process empleado{
     int Pid;
 
     do
-        persona[*]?liberar() ->     libre=true;
-                                    if(not empty(c)){
+        persona[*]?liberar() ->     if(not empty(c)){
                                         pop(c,Pid);
                                         persona[Pid]!pasar();
-                                    }
+                                    } else 
+                                        libre=true;
         persona[*]?pedido(Pid) ->   if(libre){libre=false;
                                         persona[Pid]!pasar();
                                     } else {
