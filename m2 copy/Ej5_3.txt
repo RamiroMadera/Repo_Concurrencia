@@ -1,0 +1,92 @@
+3. Se dispone de un sistema compuesto por 1 central y 2 procesos. Los procesos envían
+señales a la central. La central comienza su ejecución tomando una señal del proceso 1,
+luego toma aleatoriamente señales de cualquiera de los dos indefinidamente. Al recibir una
+señal de proceso 2, recibe señales del mismo proceso durante 3 minutos.
+El proceso 1 envía una señal que es considerada vieja (se deshecha) si en 2 minutos no fue
+recibida.
+El proceso 2 envía una señal, si no es recibida en ese instante espera 1 minuto y vuelve a
+mandarla (no se deshecha).
+
+PROCEDURE sistama IS
+
+TASK proc1;
+TASK proc2;
+TASK central IS
+    ENTRY señal1(s:IN señal);
+    ENTRY señal2(s:IN señal);
+    ENTRY terminoElTiempo;
+END central;
+TASK timer IS
+    ENTRY comenzar;
+END timer;
+
+TASK BODY proc1 IS
+    s:señal;
+BEGIN
+    LOOP
+        generar(s);
+        SELECT
+            central.señal1(s);
+        OR DELAY 2min
+            null;
+        END SELECT;
+    END LOOP;
+END proc1;
+
+TASK BODY proc2 IS
+    s:señal;
+BEGIN
+    generar(s);
+    LOOP
+        SELECT
+            central.señal2(s);
+            generar(s);
+        OR ELSE
+            delay(1min);
+        END SELECT;
+    END LOOP;
+END proc2;
+
+TASK BODY central IS
+    solo2:bool;
+    sen:señal;
+BEGIN
+    solo2:=false;
+    ACCEPT señal1(s:IN señal) DO
+        sen:=s;
+    END señal1;
+    //procesar sen
+    LOOP
+        SELECT 
+            WHEN(solo2=false) => ACCEPT señal1(s: IN señal) DO
+                                    sen:=s;
+                                END señal1;
+                                //procesar sen
+        OR
+            WHEN(terminoElTiempo'count=0) => ACCEPT señal2(s: IN señal) DO
+                                                sen:=s;
+                                            END señal1;
+                                            if(solo2=false) then
+                                                solo2:=true;
+                                                timer.comenzar;
+                                            end if;
+                                            //procesar sen
+        OR 
+            ACCEPT terminoElTiempo;
+            solo2:=false;
+        END SELECT;
+    END LOOP;
+END central;
+
+TASK BODY timer IS
+BEGIN
+    LOOP
+        ACCEPT comenzar;
+        delay(3min);
+        centra.terminoElTiempo;
+    END LOOP;
+END;
+
+BEGIN
+    null
+END sistema;

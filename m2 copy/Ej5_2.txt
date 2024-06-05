@@ -1,0 +1,32 @@
+2. Se quiere modelar la cola de un banco que atiende un solo empleado, los clientes llegan y si
+esperan más de 10 minutos se retiran.
+
+PROCEDURE banco IS
+
+TASK TYPE clientes;
+cliente:ARRAY(1..C) OF clientes;
+TASK empleado IS
+    ENTRY pasar;
+END empleado;
+
+TASK BODY clientes IS
+BEGIN
+    SELECT
+        empleado.pasar;
+    OR DELAY 10min
+        null;
+    END SELECT;
+END clientes;
+
+TASK BODY empleado IS
+BEGIN
+    LOOP
+        ACCEPT pasar DO
+            //realiza la atención
+        END pasar;
+    END LOOP;
+END empleado
+
+BEGIN
+    null;
+END banco;
