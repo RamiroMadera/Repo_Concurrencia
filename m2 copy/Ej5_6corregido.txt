@@ -11,7 +11,7 @@ persona existe una función Moneda() que retorna el valor de la moneda encontrad
 PROCEDURE playa IS
 
 TASK TYPE personas IS
-    ENTRY identificar(iden:IN integer)
+    ENTRY identificar(iden:IN integer)                          //ESTRUCTURA GENERAL DEL PROGRAMA
     ENTRY sincronizar;
     ENTRY grupoGanador(gru:IN integer);
 END personas;

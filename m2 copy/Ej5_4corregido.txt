@@ -36,7 +36,7 @@ BEGIN
     WHILE(veces<3) LOOP
         SELECT
             medico.pedidoP;
-            veces:=3;
+            veces:=3;                           //SI EL MEDICO TE ATIENDE,DEBERIAS SALIR DEL WHILE
         OR DELAY 5min
             veces++;
             if (veces<3) then
@@ -72,8 +72,8 @@ BEGIN
                                         END pedidoE;
                                         delay(rand());
         OR ELSE
-            SELECT
-                escritorio.tomarN(nota);
+            SELECT                                                      //esto lo cambié para que en vez de el escritorio le mande la nota,
+                escritorio.tomarN(nota);                                //sea él quien intente establecer la comunicación.
             OR ELSE
                 null;
             END SELECT;
@@ -87,7 +87,7 @@ TASK BODY escritorio IS
 BEGIN
     LOOP
         SELECT
-            WHEN (not empty(c)) =>  ACCEPT tomarN(n: OUT text) DO
+            WHEN (not empty(c)) =>  ACCEPT tomarN(n: OUT text) DO               //ESTRUCTURA GENERAL DEL ESCRITORIO
                                         pop(c,nota);
                                         n:=nota;
                                     END tomarN;

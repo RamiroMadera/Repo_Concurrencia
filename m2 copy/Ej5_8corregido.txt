@@ -1,0 +1,81 @@
+8. Una empresa de limpieza se encarga de recolectar residuos en una ciudad por medio de 3
+camiones. Hay P personas que hacen continuos reclamos hasta que uno de los camiones
+pase por su casa. Cada persona hace un reclamo, espera a lo sumo 15 minutos a que llegue
+un camión y si no vuelve a hacer el reclamo y a esperar a lo sumo 15 minutos a que llegue
+un camión y así sucesivamente hasta que el camión llegue y recolecte los residuos; en ese
+momento deja de hacer reclamos y se va. Cuando un camión está libre la empresa lo envía a
+la casa de la persona que más reclamos ha hecho sin ser atendido. Nota: maximizar la
+concurrencia.
+
+PROCEDURE limpieza IS
+
+TASK TYPE personas IS
+    ENTRY identif(iden:IN integer);
+    ENTRY llego;
+END personas;
+TASK TYPE camiones;
+TASK empresa IS
+    ENTRY libre(Piden:OUT integer);
+    ENTRY reclamo(Piden:IN integer);
+END empresa;
+
+persona:ARRAY(1..P) of personas;
+camion:ARRAY(1..3) of camiones;
+
+TASK BODY personas IS
+    id:integer;
+    listo:boolean;
+BEGIN
+    ACCEPT identif(iden:IN) DO
+        id:=iden;
+    END identif;
+
+    listo:=false;
+    while(not listo) loop
+        empresa.reclamo(id);
+        SELECT 
+            ACCEPT llego;
+            listo:=true;
+        OR DELAY 15min;
+            null
+        END SELECT;
+    end loop;
+END personas;
+
+TASK BODY camiones IS
+    Pid:integer;
+BEGIN
+    loop
+        empresa.libre(Pid);
+        //ir a la casa de Pid
+        persona(Pid).llego;
+    end loop;
+END camiones;
+
+TASK BODY empresa IS
+    p:array(1..P) of integer;
+    pAux:integer;
+BEGIN
+    for i in 1..P loop
+        p(i):=0;
+    end loop;
+    loop
+        SELECT 
+            WHEN(libre'count=0) =>  ACCEPT reclamo(Piden:IN integer) DO
+                                        p(Piden)++;
+                                    END reclamo;
+        OR
+            WHEN(AlgunoMayorACero(p))   => ACCEPT libre(Piden:OUT integer) DO               //QUE PASA SI NO HAY RECLAMOS??
+                                                pAux:=getPosMayor(p);
+                                                Piden:=pAux;
+                                            END libre;
+                                            p(pAux):=-100;
+        END SELECT;
+    end loop;
+END empresa;
+
+BEGIN
+    for i in 1..P loop  
+        persona(i).identif(i);
+    end loop;
+END limpieza;
